@@ -1,24 +1,120 @@
-<div class="share-group" style="display: flex; gap: 10px; margin-top: 10px;">
-    <button onclick="shareWhatsApp()" style="background: #25D366; color: white; border: none; flex: 1;">
-        WhatsApp
-    </button>
-    <button onclick="shareTelegram()" style="background: #0088cc; color: white; border: none; flex: 1;">
-        Telegram
-    </button>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARI Logistics | Dispatch Pro</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #001529; padding: 15px; color: #333; }
+        .card { background: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-width: 550px; margin: auto; }
+        
+        .logo-container { text-align: center; margin-bottom: 15px; }
+        .logo-container img { max-width: 200px; height: auto; }
+
+        h2 { color: #002244; text-align: center; font-weight: 800; border-bottom: 3px solid #F15A24; padding-bottom: 8px; margin-top: 0; }
+        
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
+        label { display: block; margin-bottom: 3px; font-weight: 700; font-size: 0.65rem; color: #002244; text-transform: uppercase; }
+        input { width: 100%; padding: 8px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 0.9rem; }
+        input:focus { border-color: #F15A24; outline: none; background: #fff; }
+        
+        .rpm-display { background: #002244; color: white; padding: 12px; border-radius: 8px; text-align: center; margin: 15px 0; }
+        .rpm-display span { font-size: 2rem; font-weight: 800; color: #F15A24; }
+
+        .copy-container { background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px dashed #002244; margin-bottom: 15px; }
+        textarea { width: 100%; height: 120px; resize: none; font-family: monospace; font-size: 0.8rem; padding: 8px; border-radius: 4px; border: 1px solid #e2e8f0; margin-top: 5px; box-sizing: border-box; }
+        
+        .btn-main { width: 100%; padding: 12px; border-radius: 6px; font-weight: bold; text-transform: uppercase; cursor: pointer; border: none; margin-bottom: 8px; transition: 0.2s; }
+        .btn-copy { background: #F15A24; color: white; }
+        .btn-clear { background: #64748b; color: white; }
+        
+        .share-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+        .btn-share { padding: 10px; border-radius: 6px; font-weight: bold; border: none; cursor: pointer; color: white; font-size: 0.75rem; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="logo-container">
+        <img src="https://arilogisticsinc.com/wp-content/uploads/2021/05/logo-ari.png" alt="ARI Logo">
+    </div>
+
+    <h2>DISPATCH CALCULATOR</h2>
+    
+    <div class="grid">
+        <div class="input-group"><label>Gross Rate ($)</label><input type="number" id="rate" oninput="updateAll()"></div>
+        <div class="input-group"><label>Weight (Lbs)</label><input type="number" id="weight" oninput="updateAll()"></div>
+        <div class="input-group"><label>Loaded Mi</label><input type="number" id="loaded" oninput="updateAll()"></div>
+        <div class="input-group"><label>Deadhead Mi</label><input type="number" id="deadhead" oninput="updateAll()"></div>
+    </div>
+
+    <div class="grid">
+        <div class="input-group"><label>Commodity</label><input type="text" id="commodity" oninput="updateAll()"></div>
+        <div class="input-group"><label>Requirements</label><input type="text" id="reqs" oninput="updateAll()"></div>
+        <div class="input-group"><label>Pick Up</label><input type="text" id="pu_info" oninput="updateAll()"></div>
+        <div class="input-group"><label>Delivery</label><input type="text" id="del_info" oninput="updateAll()"></div>
+    </div>
+
+    <div class="rpm-display">
+        <label style="color: #60a5fa;">RATE PER MILE</label><br>
+        <span id="rpm_display">$ 0.00</span>
+    </div>
+
+    <div class="copy-container">
+        <label>📋 Posting Summary</label>
+        <textarea id="summary_text" readonly></textarea>
+        <button class="btn-main btn-copy" onclick="copyToClipboard()">Copy Text</button>
+        
+        <div class="share-grid">
+            <button class="btn-share" style="background:#25D366" onclick="shareWA()">WhatsApp</button>
+            <button class="btn-share" style="background:#0088cc" onclick="shareTG()">Telegram</button>
+            <button class="btn-share" style="background:#ff6600" onclick="shareRC()">RingCentral</button>
+        </div>
+    </div>
+
+    <button class="btn-main btn-clear" onclick="clearForm()">Clear Form</button>
 </div>
 
 <script>
-    // Añade estas dos funciones al final de tu <script>
-    
-    function shareWhatsApp() {
-        let text = encodeURIComponent(document.getElementById("summary_text").value);
-        if(!text) return alert("Primero ingresa los datos de la carga");
-        window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+    function updateAll() {
+        let rate = parseFloat(document.getElementById('rate').value) || 0;
+        let totalMiles = (parseFloat(document.getElementById('loaded').value) || 0) + (parseFloat(document.getElementById('deadhead').value) || 0);
+        let rpm = totalMiles > 0 ? (rate / totalMiles) : 0;
+        
+        document.getElementById('rpm_display').innerText = "$ " + rpm.toFixed(2);
+
+        let summary = `🔹 ARI LOGISTICS INC 🔹\n` +
+                      `💰 RATE: $${rate.toLocaleString()}\n` +
+                      `📍 MILES: ${totalMiles}\n` +
+                      `⚖️ WEIGHT: ${document.getElementById('weight').value || '--'} lbs\n` +
+                      `📦 COMMODITY: ${document.getElementById('commodity').value || '--'}\n` +
+                      `🛠️ REQS: ${document.getElementById('reqs').value || 'Standard'}\n` +
+                      `📅 PU: ${document.getElementById('pu_info').value || '--'}\n` +
+                      `🏁 DEL: ${document.getElementById('del_info').value || '--'}\n` +
+                      `💵 RPM: $${rpm.toFixed(2)}`;
+        
+        document.getElementById('summary_text').value = summary;
     }
 
-    function shareTelegram() {
-        let text = encodeURIComponent(document.getElementById("summary_text").value);
-        if(!text) return alert("Primero ingresa los datos de la carga");
-        window.open(`https://t.me/share/url?url=&text=${text}`, '_blank');
+    function copyToClipboard() {
+        let copyText = document.getElementById("summary_text");
+        copyText.select();
+        navigator.clipboard.writeText(copyText.value);
+        alert("Copied!");
     }
+
+    function clearForm() {
+        if(confirm("Are you sure you want to clear all fields?")) {
+            document.querySelectorAll('input').forEach(i => i.value = "");
+            document.getElementById('summary_text').value = "";
+            document.getElementById('rpm_display').innerText = "$ 0.00";
+        }
+    }
+
+    function shareWA() { window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(document.getElementById("summary_text").value)}`, '_blank'); }
+    function shareTG() { window.open(`https://t.me/share/url?url=&text=${encodeURIComponent(document.getElementById("summary_text").value)}`, '_blank'); }
+    function shareRC() { window.location.href = `sms:?&body=${encodeURIComponent(document.getElementById("summary_text").value)}`; }
 </script>
+
+</body>
+</html>
